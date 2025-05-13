@@ -22,27 +22,3 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ```
 
-### 3. Pull the Required Model
-
-chfaker is optimized to run offline using the lightweight and fast qwen2.5:0.5b model:
-
-```bash
-ollama pull qwen2.5:0.5b
-
-```
-
-## Usage
-
-Place main.py in the root of the Git repository you wish to modify. Run the script using the following command structure:
-
-```bash
-python3 main.py --s YYYY-MM-DD --e YYYY-MM-DD --cc <NUMBER_OF_COMMITS>
-
-```
-
-### Example Command
-
-To generate 20 commits spread organically between January 1st and June 1st, 2026:
-
-```bash
-python3 main.py --s 2026-01-01 --e 2026-06-01 --cc 20
