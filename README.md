@@ -22,3 +22,15 @@ curl -fsSL https://ollama.com/install.sh | sh
 
 ```
 
+### 3. Pull the Required Model
+
+chfaker is optimized to run offline using the lightweight and fast qwen2.5:0.5b model:
+
+```bash
+ollama pull qwen2.5:0.5b
+
+```
+
+## Usage
+
+Place main.py in the root of the Git repository you wish to modify. Run the script using the following command structure:
