@@ -229,3 +229,119 @@ def generate_commit_message(diff, args):
     ]
     long_fallbacks = [
         "Updated repository modules to align with architectural formatting changes and optimized internal tracking files.",
+        "Implemented structural revisions across project dependencies to resolve underlying file synchronization issues.",
+        "Refactored file structural hierarchies and cleaned up codebase syntax definitions for better maintenance."
+    ]
+
+    if not clean_diff or clean_diff == "File architecture modifications":
+        return random.choice(small_fallbacks if args.mode == 'small' else long_fallbacks)
+
+    # Simplified single-line prompt
+    prompt = f"Summarize this code change in a few words. No quotes, no code, max 8 words:\n{clean_diff}"
+    
+    if args.mode == 'long':
+        prompt = prompt.replace("max 8 words", "Write 2 descriptive sentences")
+
+    model = args.model or "qwen2.5:0.5b"
+    result = subprocess.run(['ollama', 'run', model, prompt], capture_output=True, text=True, encoding='utf-8')
+    clean_msg = sanitize_llm_output(result.stdout)
+    
+    if not clean_msg:
+        return random.choice(small_fallbacks if args.mode == 'small' else long_fallbacks)
+    return clean_msg
+
+def commit_with_date(date_obj, message, current_num, total_num):
+    if not message or not message.strip():
+        message = "Routine system updates and maintenance"
+
+    date_str = date_obj.strftime('%Y-%m-%dT%H:%M:%S')
+    env = os.environ.copy()
+    env['GIT_AUTHOR_DATE'] = date_str
+    env['GIT_COMMITTER_DATE'] = date_str
+    
+    proc = subprocess.run(['git', 'commit', '--allow-empty', '-m', message], env=env, capture_output=True, text=True)
+    
+    if proc.returncode != 0:
+        print(f"[!] Error committing at {date_str}. (Nothing staged or git error)")
+    else:
+        print(f"[{current_num}/{total_num}] [{date_str}] {message}")
+
+def get_all_repo_files(base_dir):
+    all_files = []
+    for root, _, files in os.walk(base_dir):
+        for file in files:
+            all_files.append(os.path.join(root, file))
+    return all_files
+
+def main():
+    global ORIGINAL_BRANCH
+
+    print_legal_warning()
+    
+    parser = argparse.ArgumentParser(description="chfaker is a commit history faker using local Ollama, use this with caution, author takes no liability")
+    parser.add_argument('--s', type=str, required=True, help="The start date (e.g., YYYY-MM-DD)")
+    parser.add_argument('--e', type=str, required=True, help="The end date (e.g., YYYY-MM-DD)")
+    parser.add_argument('--cc', type=int, required=True, help="The total number of commits")
+    parser.add_argument('--model', '-m', type=str, help="Model name (Defaults: qwen2.5:0.5b for local)")
+    parser.add_argument('--mode', choices=['small', 'long'], default='small', help="Commit message detail mode")
+    
+    args = parser.parse_args()
+    script_name = os.path.basename(__file__)
+
+    check_ollama(args.model or "qwen2.5:0.5b")
+    
+    if not os.path.isdir('.git'):
+        print("Error: You must run this inside a git repository.")
+        sys.exit(1)
+
+    ORIGINAL_BRANCH = get_current_branch()
+
+    print(f"\nMoving files to {TEMP_DIR} and setting up orphan branch...")
+    setup_workspace(script_name)
+    commit_dates = generate_dates(args.s, args.e, args.cc)
+    
+    all_temp_files = get_all_repo_files(TEMP_DIR)
+    priority_files = []
+    normal_files = []
+    
+    for f in all_temp_files:
+        basename = os.path.basename(f).lower()
+        if 'license' in basename:
+            priority_files.append(f)
+        else:
+            normal_files.append(f)
+
+    pending_items = []
+    for nf in normal_files:
+        if is_text_file(nf):
+            with open(nf, 'r', encoding='utf-8', errors='ignore') as f:
+                lines = f.readlines()
+                if lines:
+                    pending_items.append({'type': 'text', 'file': nf, 'lines': lines})
+        else:
+            pending_items.append({'type': 'binary', 'file': nf})
+            
+    random.shuffle(pending_items)
+
+    print("\n[+] Creating Initial Commit...")
+    staged_initial = False
+    
+    for pf in priority_files:
+        rel_path = os.path.relpath(pf, TEMP_DIR)
+        os.makedirs(os.path.dirname(rel_path) or '.', exist_ok=True)
+        shutil.copy2(pf, rel_path)
+        subprocess.run(['git', 'add', rel_path])
+        staged_initial = True
+        
+    if not staged_initial and pending_items:
+        item = pending_items.pop(0)
+        rel_path = os.path.relpath(item['file'], TEMP_DIR)
+        os.makedirs(os.path.dirname(rel_path) or '.', exist_ok=True)
+        if item['type'] == 'binary':
+            shutil.copy2(item['file'], rel_path)
+        else:
+            with open(rel_path, 'a', encoding='utf-8') as f:
+                f.writelines(item['lines'])
+        subprocess.run(['git', 'add', rel_path])
+        staged_initial = True
+        
