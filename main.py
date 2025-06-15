@@ -345,3 +345,61 @@ def main():
         subprocess.run(['git', 'add', rel_path])
         staged_initial = True
         
+    if staged_initial:
+        commit_with_date(commit_dates[0], "Initial commit", 1, args.cc)
+    else:
+        print("[!] Workspace is completely empty. Nothing to commit.")
+        rollback_workspace()
+
+    current_commit_idx = 1
+    
+    print(f"\n[+] Processing {len(pending_items)} Remaining File Chunks over {args.cc - 1} Commits...")
+    
+    while current_commit_idx < len(commit_dates):
+        date_obj = commit_dates[current_commit_idx]
+        commits_left = len(commit_dates) - current_commit_idx
+        
+        if not pending_items:
+            pass
+        elif commits_left == 1:
+            for item in pending_items:
+                rel_path = os.path.relpath(item['file'], TEMP_DIR)
+                os.makedirs(os.path.dirname(rel_path) or '.', exist_ok=True)
+                if item['type'] == 'binary':
+                    shutil.copy2(item['file'], rel_path)
+                else:
+                    with open(rel_path, 'a', encoding='utf-8') as f:
+                        f.writelines(item['lines'])
+                subprocess.run(['git', 'add', rel_path])
+            pending_items = []
+        else:
+            items_to_stage = max(1, len(pending_items) // commits_left)
+            
+            for _ in range(items_to_stage):
+                if not pending_items:
+                    break
+                    
+                item = pending_items.pop(0)
+                rel_path = os.path.relpath(item['file'], TEMP_DIR)
+                os.makedirs(os.path.dirname(rel_path) or '.', exist_ok=True)
+                
+                if item['type'] == 'binary':
+                    shutil.copy2(item['file'], rel_path)
+                else:
+                    lines = item['lines']
+                    lines_to_write = max(1, len(lines) // 2)
+                    with open(rel_path, 'a', encoding='utf-8') as f:
+                        f.writelines(lines[:lines_to_write])
+                    
+                    if lines[lines_to_write:]:
+                        item['lines'] = lines[lines_to_write:]
+                        pending_items.append(item)
+                        
+                subprocess.run(['git', 'add', rel_path])
+
+        raw_diff = get_staged_diff()
+        commit_msg = generate_commit_message(raw_diff, args)
+        
+        commit_with_date(date_obj, commit_msg, current_commit_idx + 1, args.cc)
+        
+        current_commit_idx += 1
