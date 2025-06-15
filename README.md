@@ -34,3 +34,9 @@ ollama pull qwen2.5:0.5b
 ## Usage
 
 Place main.py in the root of the Git repository you wish to modify. Run the script using the following command structure:
+
+```bash
+python3 main.py --s YYYY-MM-DD --e YYYY-MM-DD --cc <NUMBER_OF_COMMITS>
+
+```
+
