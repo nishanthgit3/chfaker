@@ -403,3 +403,32 @@ def main():
         commit_with_date(date_obj, commit_msg, current_commit_idx + 1, args.cc)
         
         current_commit_idx += 1
+
+    cleanup_workspace()
+    print(f"\n--- Process Complete (Generated {current_commit_idx} Local Commits) ---")
+
+    print("\n[WARNING] The next step will DELETE ALL EXISTING BRANCHES (local and remote) and replace them with a single 'main' branch containing this new history.")
+    push_choice = input("Do you want to do this? (y/N): ").strip().lower()
+    
+    if push_choice == 'y':
+        # --- 1. LOCAL SCORCHED EARTH ---
+        print("\nDeleting all other local branches...")
+        proc = subprocess.run(['git', 'branch', '--format', '%(refname:short)'], capture_output=True, text=True)
+        branches = [b.strip() for b in proc.stdout.split('\n') if b.strip()]
+        
+        for branch in branches:
+            if branch != 'latest_branch':
+                subprocess.run(['git', 'branch', '-D', branch], capture_output=True)
+                
+        print("Renaming current branch to 'main'...")
+        subprocess.run(['git', 'branch', '-m', 'main'], capture_output=True)
+        
+        # --- 2. REMOTE SCORCHED EARTH ---
+        print("Force updating remote repository (git push -f origin main)...")
+        # Ensure 'main' gets pushed successfully first
+        push_proc = subprocess.run(['git', 'push', '-f', 'origin', 'main'], capture_output=True, text=True)
+        
+        if push_proc.returncode == 0:
+            print("[+] 'main' branch successfully established on remote.")
+            
+            # Query GitHub directly for all hosted branches
