@@ -432,3 +432,17 @@ def main():
             print("[+] 'main' branch successfully established on remote.")
             
             # Query GitHub directly for all hosted branches
+            print("Querying remote repository for legacy branches...")
+            r_proc = subprocess.run(['git', 'ls-remote', '--heads', 'origin'], capture_output=True, text=True)
+            
+            if r_proc.returncode == 0:
+                for line in r_proc.stdout.split('\n'):
+                    if line.strip():
+                        # Format is usually: <hash>\trefs/heads/<branch>
+                        ref = line.split('\t')[1]
+                        branch_name = ref.replace('refs/heads/', '')
+                        
+                        if branch_name != 'main':
+                            print(f"  -> Deleting remote branch: {branch_name}")
+                            subprocess.run(['git', 'push', 'origin', '--delete', branch_name], capture_output=True)
+                            
