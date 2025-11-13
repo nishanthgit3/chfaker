@@ -44,3 +44,4 @@ python3 main.py --s YYYY-MM-DD --e YYYY-MM-DD --cc <NUMBER_OF_COMMITS>
 
 To generate 20 commits spread organically between January 1st and June 1st, 2026:
 
+```bash
