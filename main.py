@@ -446,3 +446,10 @@ def main():
                             print(f"  -> Deleting remote branch: {branch_name}")
                             subprocess.run(['git', 'push', 'origin', '--delete', branch_name], capture_output=True)
                             
+            print("\n[+] SUCCESS! Remote repository is now perfectly mirrored: ONLY 'main' exists.")
+        else:
+            print(f"\n[!] Error during force-push to main:\n{push_proc.stderr}")
+    else:
+        print("\nSkipped branch cleanup and remote synchronization.")
+        print("Your fake commits are currently on the 'latest_branch' branch.")
+
