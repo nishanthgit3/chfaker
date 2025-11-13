@@ -453,3 +453,7 @@ def main():
         print("\nSkipped branch cleanup and remote synchronization.")
         print("Your fake commits are currently on the 'latest_branch' branch.")
 
+if __name__ == "__main__":
+    try:
+        main()
+    except KeyboardInterrupt:
