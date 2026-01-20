@@ -457,3 +457,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
+        rollback_workspace()
+    except Exception as e:
