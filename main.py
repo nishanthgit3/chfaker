@@ -459,3 +459,5 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         rollback_workspace()
     except Exception as e:
+        print(f"\n{RED}[!] A fatal error occurred: {e}{RESET}")
+        rollback_workspace()
