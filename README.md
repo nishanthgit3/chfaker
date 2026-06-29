@@ -33,7 +33,7 @@ ollama pull qwen2.5:0.5b
 
 ## Usage
 
-Place chfaker.py in the root of the Git repository you wish to modify. Run the script using the following command structure:
+Place chfaker.py in the root of the Git repository you wish to modify(where the .git file is located). Run the script using the following command structure:
 
 ```bash
 python3 chfaker.py --s YYYY-MM-DD --e YYYY-MM-DD --cc <NUMBER_OF_COMMITS>
